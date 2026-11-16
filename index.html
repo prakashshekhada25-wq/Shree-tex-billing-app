@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SHREE TEX Billing Software</title>
+<style>
+:root{--navy:#17365d;--blue:#4472c4;--bg:#f3f6fb;--line:#d8e0ec;--muted:#65748b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px Arial,sans-serif;color:#182230}
+header{background:var(--navy);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:21px;margin:0}header small{opacity:.85}
+nav{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;background:#fff;border-bottom:1px solid var(--line)}
+button,.btn{border:0;border-radius:7px;padding:10px 14px;background:var(--blue);color:#fff;font-weight:600;cursor:pointer}
+button.secondary{background:#e8eef8;color:var(--navy)}button.danger{background:#b42318}
+nav button.active{background:var(--navy);color:white}
+main{max-width:1250px;margin:20px auto;padding:0 16px}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px #102b4d0a}
+h2{font-size:18px;margin:0 0 15px;color:var(--navy)}h3{font-size:15px;margin:0 0 10px;color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:12px;color:var(--muted);font-weight:700}
+input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font:14px Arial;background:white}
+input:focus{outline:2px solid #b9cef4;border-color:var(--blue)}
+.wide{grid-column:span 2}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:850px}th,td{border:1px solid #aab8ca;padding:7px;text-align:center}th{background:var(--blue);color:#fff}td input{border:0;text-align:center;padding:7px;min-width:65px}td.desc input{text-align:left;min-width:150px}.totals{margin-left:auto;width:min(100%,340px);margin-top:12px}.totals div{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid var(--line);font-weight:700}.totals .grand{font-size:18px;color:var(--navy)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{background:#f5f8fd;border:1px solid var(--line);padding:16px;border-radius:9px}.stat strong{display:block;font-size:22px;color:var(--navy);margin-top:6px}
+.hidden{display:none!important}.hint{color:var(--muted);font-size:12px;line-height:1.5}.pill{display:inline-block;padding:4px 8px;border-radius:20px;background:#e6f4ea;color:#18723b;font-size:12px;font-weight:bold}
+#invoicePrint{display:none}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cards{grid-template-columns:1fr}}
+@media print{
+ body{background:#fff}header,nav,.no-print,#dashboard,#history,#customers,#settings{display:none!important}
+ main{margin:0;padding:0;max-width:none}.panel{border:0;box-shadow:none;padding:0;margin:0}
+ #invoiceEditor{display:block!important}.grid,.actions,.removeRow{display:none!important}
+ #invoicePrint{display:block!important}
+ #invoicePrint table{min-width:0;width:100%;font-size:11px}
+ #invoicePrint th,#invoicePrint td{border:1px solid #111;padding:5px}
+ #invoicePrint th{background:#fff!important;color:#000!important}
+ .print-head{border:2px solid #111;padding:12px;margin-bottom:0}
+ .print-head h1{text-align:center;font-size:18px;margin:0 0 20px}
+ .print-meta{display:flex;justify-content:space-between;margin-bottom:12px}
+ .billto{border:1px solid #111;padding:8px;margin-bottom:0}
+ .print-total{font-weight:bold}
+}
+</style></head>
+<body>
+<header><div><h1>SHREE TEX — Billing Software</h1><small>Invoice management • Offline-ready</small></div><span class="pill" id="connection">Offline-ready</span></header>
+<nav>
+<button class="active" data-tab="invoiceEditor">New Invoice</button><button data-tab="dashboard">Dashboard</button><button data-tab="history">Invoice History</button><button data-tab="customers">Customers</button><button data-tab="settings">Backup / Settings</button>
+</nav>
+<main>
+<section id="invoiceEditor" class="tab">
+<div class="panel no-print">
+<h2>Invoice Details</h2>
+<div class="grid">
+<div class="field"><label>Invoice Number</label><input id="invNo"></div>
+<div class="field"><label>Invoice Date</label><input id="invDate" type="date"></div>
+<div class="field"><label>Customer Name</label><input id="custName" list="customerOptions" placeholder="Customer name"><datalist id="customerOptions"></datalist></div>
+<div class="field"><label>Phone</label><input id="custPhone" placeholder="Customer phone"></div>
+<div class="field wide"><label>Billing Address</label><input id="custAddress" placeholder="Address"></div>
+</div></div>
+<div class="panel no-print">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2>Items</h2><button id="addRow">+ Add Item</button></div>
+<div class="tablewrap"><table id="entryTable"><thead><tr><th>SL. NO.</th><th>DATE</th><th>DESCRIPTION</th><th>CH NO.</th><th>QTY.</th><th>RATE</th><th>AMOUNT</th><th class="removeRow">×</th></tr></thead><tbody id="items"></tbody></table></div>
+<div class="totals"><div><span>Total Quantity</span><span id="qtyTotal">0</span></div><div class="grand"><span>Total Amount ₹</span><span id="amountTotal">0.00</span></div><div><span>Payable Amount ₹</span><span id="payable">0.00</span></div></div>
+<div class="actions"><button id="saveInvoice">Save Invoice</button><button class="secondary" id="newInvoice">Clear / New</button><button class="secondary" id="printInvoice">Print / Save PDF</button></div>
+<p class="hint">Amount is calculated automatically as QTY × RATE. Saved invoices remain in this browser on this computer. Use Backup / Settings regularly to protect your data.</p>
+</div>
+<div id="invoicePrint">
+<div class="print-head"><h1>INVOICE</h1><div class="print-meta"><div><b>SHREE TEX</b><br>Phone : 9904620414</div><div><b>Invoice No. - <span id="pNo"></span></b><br><b>Invoice Date - <span id="pDate"></span></b></div></div></div>
+<div class="billto"><b>BILL TO</b><br><b id="pCustomer"></b><br><span id="pAddress"></span></div>
+<table><thead><tr><th>SL. NO.</th><th>DATE</th><th>DESCRIPTION</th><th>CH NO.</th><th>QTY.</th><th>RATE</th><th>AMOUNT</th></tr></thead><tbody id="pItems"></tbody><tfoot><tr class="print-total"><td colspan="4">TOTAL</td><td id="pQty"></td><td></td><td id="pTotal"></td></tr></tfoot></table>
+<div style="border:1px solid #111;padding:12px;margin-top:0"><b>PAYABLE AMOUNT : ₹ <span id="pPayable"></span></b><div style="text-align:center;margin-top:18px;font-weight:bold">THANK YOU FOR BUSINESS WITH US</div></div>
+</div>
+</section>
+<section id="dashboard" class="tab hidden"><div class="panel"><h2>Dashboard</h2><div class="cards"><div class="stat">Invoices<strong id="statCount">0</strong></div><div class="stat">Total Quantity<strong id="statQty">0</strong></div><div class="stat">Total Sales<strong id="statSales">₹0.00</strong></div></div></div></section>
+<section id="history" class="tab hidden"><div class="panel"><h2>Invoice History</h2><div class="field" style="max-width:360px;margin-bottom:12px"><label>Search invoice / customer</label><input id="historySearch" placeholder="Type to search"></div><div class="tablewrap"><table><thead><tr><th>Invoice No.</th><th>Date</th><th>Customer</th><th>Qty</th><th>Amount</th><th>Actions</th></tr></thead><tbody id="historyRows"></tbody></table></div></div></section>
+<section id="customers" class="tab hidden"><div class="panel"><h2>Customers</h2><div class="tablewrap"><table><thead><tr><th>Customer</th><th>Phone</th><th>Address</th><th>Invoices</th><th>Total Sales</th></tr></thead><tbody id="customerRows"></tbody></table></div></div></section>
+<section id="settings" class="tab hidden"><div class="panel"><h2>Backup / Settings</h2><p>Download a backup file and keep it safe. To move data to another computer, use Restore Backup there.</p><div class="actions"><button id="backup">Download Backup</button><label class="btn" for="restoreFile" style="background:#e8eef8;color:#17365d">Restore Backup</label><input id="restoreFile" type="file" accept=".json,application/json" class="hidden"><button class="secondary" id="csv">Export Invoice History CSV</button></div><hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><h3>Company Details</h3><p>SHREE TEX • Phone: 9904620414</p><p class="hint">This first version stores data locally in the browser and works without internet after opening the app. True automatic cloud sync between multiple computers requires a secure online database/server; backup and restore are included here.</p></div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id), money=n=>(Number(n)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+let invoices=JSON.parse(localStorage.getItem('shreetex_invoices')||'[]'), editingId=null;
+function today(){return new Date().toISOString().slice(0,10)}
+function nextNo(){let max=0;invoices.forEach(x=>{let n=parseInt((x.invoiceNo||'').split('/').pop());if(Number.isFinite(n))max=Math.max(max,n)});return '25/26/'+String(Math.max(12,max+1)).padStart(2,'0')}
+function addRow(item={}){const tr=document.createElement('tr'),n=$('items').children.length+1;tr.innerHTML=`<td class="sl">${n}</td><td><input type="date" class="date" value="${item.date||$('invDate').value||today()}"></td><td class="desc"><input class="descv" value="${esc(item.description||'')}" placeholder="Description"></td><td><input class="ch" value="${esc(item.chNo||'')}" placeholder="CH No."></td><td><input class="qty" type="number" min="0" step="0.01" value="${item.qty??''}"></td><td><input class="rate" type="number" min="0" step="0.01" value="${item.rate??''}"></td><td class="amt">0.00</td><td class="removeRow"><button class="danger del" type="button">×</button></td>`;$('items').appendChild(tr);tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',calc));tr.querySelector('.del').onclick=()=>{tr.remove();renumber();calc()};calc()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renumber(){[...$('items').children].forEach((r,i)=>r.querySelector('.sl').textContent=i+1)}
+function getItems(){return [...$('items').children].map(r=>({date:r.querySelector('.date').value,description:r.querySelector('.descv').value,chNo:r.querySelector('.ch').value,qty:Number(r.querySelector('.qty').value)||0,rate:Number(r.querySelector('.rate').value)||0,amount:(Number(r.querySelector('.qty').value)||0)*(Number(r.querySelector('.rate').value)||0)})).filter(x=>x.description||x.qty||x.rate||x.chNo)}
+function calc(){let q=0,a=0;[...$('items').children].forEach(r=>{let qty=Number(r.querySelector('.qty').value)||0,rate=Number(r.querySelector('.rate').value)||0,v=qty*rate;q+=qty;a+=v;r.querySelector('.amt').textContent=money(v)});$('qtyTotal').textContent=q.toLocaleString('en-IN');$('amountTotal').textContent=money(a);$('payable').textContent=money(a)}
+function fresh(){editingId=null;$('invNo').value=nextNo();$('invDate').value=today();$('custName').value='';$('custPhone').value='';$('custAddress').value='';$('items').innerHTML='';addRow();calc()}
+function save(){let customer=$('custName').value.trim();if(!customer){alert('Please enter customer name.');return}let items=getItems();if(!items.length){alert('Please add at least one item.');return}let inv={id:editingId||String(Date.now()),invoiceNo:$('invNo').value.trim(),date:$('invDate').value,customer,phone:$('custPhone').value,address:$('custAddress').value,items,qty:items.reduce((s,x)=>s+x.qty,0),amount:items.reduce((s,x)=>s+x.amount,0)};if(!inv.invoiceNo){alert('Please enter invoice number.');return}let ix=invoices.findIndex(x=>x.id===inv.id);if(ix>=0)invoices[ix]=inv;else invoices.push(inv);persist();editingId=inv.id;render();alert('Invoice saved successfully.')}
+function persist(){localStorage.setItem('shreetex_invoices',JSON.stringify(invoices))}
+function loadInvoice(id){let x=invoices.find(v=>v.id===id);if(!x)return;editingId=x.id;$('invNo').value=x.invoiceNo;$('invDate').value=x.date;$('custName').value=x.customer;$('custPhone').value=x.phone||'';$('custAddress').value=x.address||'';$('items').innerHTML='';x.items.forEach(addRow);calc();showTab('invoiceEditor')}
+function printNow(){let items=getItems();$('pNo').textContent=$('invNo').value;$('pDate').textContent=new Date($('invDate').value+'T00:00:00').toLocaleDateString('en-GB');$('pCustomer').textContent=$('custName').value;$('pAddress').textContent=$('custAddress').value;$('pItems').innerHTML=items.map((x,i)=>`<tr><td>${i+1}</td><td>${x.date?new Date(x.date+'T00:00:00').toLocaleDateString('en-GB'):''}</td><td style="text-align:left">${esc(x.description)}</td><td>${esc(x.chNo)}</td><td>${x.qty}</td><td>${money(x.rate)}</td><td>${money(x.amount)}</td></tr>`).join('');$('pQty').textContent=items.reduce((s,x)=>s+x.qty,0);$('pTotal').textContent=money(items.reduce((s,x)=>s+x.amount,0));$('pPayable').textContent=money(items.reduce((s,x)=>s+x.amount,0));window.print()}
+function showTab(id){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hidden',x.id!==id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='dashboard')renderDash();if(id==='history')renderHistory();if(id==='customers')renderCustomers()}
+function render(){let names=[...new Set(invoices.map(x=>x.customer))];$('customerOptions').innerHTML=names.map(x=>`<option value="${esc(x)}">`).join('')}
+function renderDash(){$('statCount').textContent=invoices.length;$('statQty').textContent=invoices.reduce((s,x)=>s+x.qty,0).toLocaleString('en-IN');$('statSales').textContent='₹'+money(invoices.reduce((s,x)=>s+x.amount,0))}
+function renderHistory(){let q=$('historySearch').value.toLowerCase();$('historyRows').innerHTML=invoices.slice().reverse().filter(x=>(x.invoiceNo+x.customer).toLowerCase().includes(q)).map(x=>`<tr><td>${esc(x.invoiceNo)}</td><td>${x.date||''}</td><td>${esc(x.customer)}</td><td>${x.qty}</td><td>₹${money(x.amount)}</td><td><button class="secondary" onclick="loadInvoice('${x.id}')">Open</button> <button class="danger" onclick="delInvoice('${x.id}')">Delete</button></td></tr>`).join('')}
+function delInvoice(id){if(confirm('Delete this invoice permanently?')){invoices=invoices.filter(x=>x.id!==id);persist();renderHistory();renderDash();render()}}
+function renderCustomers(){let m={};invoices.forEach(x=>{let a=m[x.customer]||(m[x.customer]={phone:x.phone,address:x.address,count:0,total:0});a.count++;a.total+=x.amount});$('customerRows').innerHTML=Object.entries(m).map(([n,x])=>`<tr><td>${esc(n)}</td><td>${esc(x.phone||'')}</td><td>${esc(x.address||'')}</td><td>${x.count}</td><td>₹${money(x.total)}</td></tr>`).join('')}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+$('addRow').onclick=()=>addRow();$('saveInvoice').onclick=save;$('newInvoice').onclick=fresh;$('printInvoice').onclick=printNow;$('historySearch').oninput=renderHistory;
+$('backup').onclick=()=>download('SHREE_TEX_Backup_'+today()+'.json',JSON.stringify({version:1,company:'SHREE TEX',invoices},null,2),'application/json');
+$('restoreFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d.invoices))throw Error();if(confirm('Restore backup? This replaces invoices currently stored in this browser.')){invoices=d.invoices;persist();render();renderDash();alert('Backup restored.')}}catch(err){alert('Invalid backup file.')}e.target.value=''};
+$('csv').onclick=()=>{let rows=[['Invoice No','Date','Customer','Phone','Address','Quantity','Amount'],...invoices.map(x=>[x.invoiceNo,x.date,x.customer,x.phone,x.address,x.qty,x.amount])];download('SHREE_TEX_Invoices.csv',rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv')};
+function download(name,data,type){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([data],{type}));a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
+$('invDate').value=today();fresh();render();
+</script></body></html>
